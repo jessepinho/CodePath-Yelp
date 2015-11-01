@@ -54,7 +54,7 @@
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
     [YelpBusiness searchWithTerm:searchBar.text
                         sortMode:YelpSortModeBestMatched
-                      categories:@[@"burgers"]
+                      categories:nil
                            deals:NO
                       completion:^(NSArray *businesses, NSError *error) {
                           self.businesses = businesses;

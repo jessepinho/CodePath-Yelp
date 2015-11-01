@@ -16,7 +16,6 @@
 @property (weak, nonatomic) IBOutlet UITableView *searchResultsTableView;
 @property (strong, nonatomic) NSArray *businesses;
 @property (strong, nonatomic) UISearchBar *searchBar;
-@property (strong, nonatomic) NSString *search;
 
 @end
 
@@ -27,18 +26,6 @@
     [self setUpTable];
     [self setUpSearchBar];
     [self setUpNavigationItem];
-
-    [YelpBusiness searchWithTerm:@"Restaurants"
-                        sortMode:YelpSortModeBestMatched
-                      categories:@[@"burgers"]
-                           deals:NO
-                      completion:^(NSArray *businesses, NSError *error) {
-                          self.businesses = businesses;
-                          [self.searchResultsTableView reloadData];
-                          for (YelpBusiness *business in businesses) {
-                              NSLog(@"%@", business);
-                          }
-                      }];
 }
 
 - (void)setUpTable {
@@ -64,8 +51,15 @@
 
 }
 
-- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
-    self.search = searchText;
+- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
+    [YelpBusiness searchWithTerm:searchBar.text
+                        sortMode:YelpSortModeBestMatched
+                      categories:@[@"burgers"]
+                           deals:NO
+                      completion:^(NSArray *businesses, NSError *error) {
+                          self.businesses = businesses;
+                          [self.searchResultsTableView reloadData];
+                      }];
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {

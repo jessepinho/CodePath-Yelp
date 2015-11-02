@@ -7,18 +7,18 @@
 //
 
 #import "FiltersViewController.h"
+#import "SegmentedControlCell.h"
 #import "SwitchCell.h"
+#import "YelpClient.h"
 
-@interface FiltersViewController () <UITableViewDataSource, UITableViewDelegate, SwitchCellDelegate>
+@interface FiltersViewController () <UITableViewDataSource, UITableViewDelegate, SwitchCellDelegate, SegmentControllCellDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (nonatomic, readonly) NSDictionary *filters;
 @property (nonatomic, strong) NSArray *sections;
 @property (nonatomic, strong) NSArray *categories;
 @property BOOL offeringDeal;
+@property YelpSortMode sortMode;
 @property (nonatomic, strong) NSMutableSet *selectedCategories;
-
-- (void)initCategories;
-- (void)initSections;
 @end
 
 @implementation FiltersViewController
@@ -43,7 +43,7 @@
 }
 
 - (void)initSections {
-    self.sections = @[@"Offering a deal", @"Categories"];
+    self.sections = @[@"Offering a deal", @"Sort mode", @"Categories"];
 }
 
 - (void)initCategories {
@@ -228,6 +228,7 @@
     self.tableView.delegate = self;
     [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"CategoryCell"];
     [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"OfferingDealCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"SegmentedControlCell" bundle:nil] forCellReuseIdentifier:@"SortModeCell"];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -239,6 +240,8 @@
         case 0:
             return [self getOfferingDealCell];
         case 1:
+            return [self getSortModeCell];
+        case 2:
             return [self categoryCellForRow:indexPath.row];
         default:
             return nil;
@@ -253,6 +256,23 @@
     return cell;
 }
 
+
+- (SegmentedControlCell *)getSortModeCell {
+    SegmentedControlCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"SortModeCell"];
+    [cell.segmentedControl removeAllSegments];
+    [cell.segmentedControl insertSegmentWithTitle:@"Best match" atIndex:0 animated:NO];
+    [cell.segmentedControl insertSegmentWithTitle:@"Distance" atIndex:0 animated:NO];
+    [cell.segmentedControl insertSegmentWithTitle:@"Rating" atIndex:0 animated:NO];
+    cell.delegate = self;
+    return cell;
+}
+
+- (void)segmentedControlCell:(SegmentedControlCell *)cell didUpdateValue:(NSInteger)value {
+    if ([cell.reuseIdentifier isEqualToString:@"SortModeCell"]) {
+        self.sortMode = value;
+    }
+}
+
 - (SwitchCell *)categoryCellForRow:(NSInteger)row {
     SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"CategoryCell"];
     cell.on = [self.selectedCategories containsObject:self.categories[row]];
@@ -264,8 +284,9 @@
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     switch (section) {
         case 0:
-            return 1;
         case 1:
+            return 1;
+        case 2:
             return self.categories.count;
         default:
             return 1;
@@ -306,6 +327,11 @@
 
     if (self.offeringDeal) {
         [filters setObject:@1 forKey:@"offeringDeal"];
+    }
+    if (self.sortMode) {
+        [filters setValue:self.sortMode forKey:@"sortMode"];
+    } else {
+        [filters setValue:YelpSortModeBestMatched forKey:@"sortMode"];
     }
     return filters;
 }

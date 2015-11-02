@@ -83,7 +83,7 @@
     [YelpBusiness searchWithTerm:self.searchBar.text
                         sortMode:YelpSortModeBestMatched
                       categories:params[@"categories"]
-                           deals:NO
+                           deals:(params[@"offeringDeal"] ? YES : NO)
                       completion:^(NSArray *businesses, NSError *error) {
                           self.businesses = businesses;
                           [self.searchResultsTableView reloadData];

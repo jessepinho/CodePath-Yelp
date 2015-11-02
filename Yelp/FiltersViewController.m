@@ -14,6 +14,7 @@
 @property (nonatomic, readonly) NSDictionary *filters;
 @property (nonatomic, strong) NSArray *sections;
 @property (nonatomic, strong) NSArray *categories;
+@property BOOL offeringDeal;
 @property (nonatomic, strong) NSMutableSet *selectedCategories;
 
 - (void)initCategories;
@@ -42,7 +43,7 @@
 }
 
 - (void)initSections {
-    self.sections = @[@"Categories"];
+    self.sections = @[@"Offering a deal", @"Categories"];
 }
 
 - (void)initCategories {
@@ -225,23 +226,35 @@
 - (void)setUpTable {
     self.tableView.dataSource = self;
     self.tableView.delegate = self;
-    [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"SwitchCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"CategoryCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"OfferingDealCell"];
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return self.sections.count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     switch (indexPath.section) {
         case 0:
+            return [self getOfferingDealCell];
+        case 1:
             return [self categoryCellForRow:indexPath.row];
-            break;
-
         default:
-            break;
+            return nil;
     }
-    return nil;
+}
+
+- (SwitchCell *)getOfferingDealCell {
+    SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"OfferingDealCell"];
+    cell.on = self.offeringDeal;
+    cell.titleLabel.text = @"Offering a deal";
+    cell.delegate = self;
+    return cell;
 }
 
 - (SwitchCell *)categoryCellForRow:(NSInteger)row {
-    SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"SwitchCell"];
+    SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"CategoryCell"];
     cell.on = [self.selectedCategories containsObject:self.categories[row]];
     cell.titleLabel.text = self.categories[row][@"name"];
     cell.delegate = self;
@@ -249,15 +262,26 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.categories.count;
+    switch (section) {
+        case 0:
+            return 1;
+        case 1:
+            return self.categories.count;
+        default:
+            return 1;
+    }
 }
 
 - (void)switchCell:(SwitchCell *)cell didUpdateValue:(BOOL)value {
-    NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
-    if (value) {
-        [self.selectedCategories addObject:self.categories[indexPath.row]];
+    if ([cell.reuseIdentifier isEqualToString:@"OfferingDealCell"]) {
+        self.offeringDeal = value;
     } else {
-        [self.selectedCategories removeObject:self.categories[indexPath.row]];
+        NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
+        if (value) {
+            [self.selectedCategories addObject:self.categories[indexPath.row]];
+        } else {
+            [self.selectedCategories removeObject:self.categories[indexPath.row]];
+        }
     }
 }
 
@@ -278,6 +302,10 @@
             [categoryNames addObject:category[@"code"]];
         }
         [filters setObject:categoryNames forKey:@"categories"];
+    }
+
+    if (self.offeringDeal) {
+        [filters setObject:@1 forKey:@"offeringDeal"];
     }
     return filters;
 }

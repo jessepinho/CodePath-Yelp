@@ -6,17 +6,18 @@
 //  Copyright (c) 2014 codepath. All rights reserved.
 //
 
-#import "MainViewController.h"
-#import "YelpBusiness.h"
 #import "BusinessTableViewCell.h"
-#import "YelpBusiness.h"
+#import "FiltersViewController.h"
+#import "MainViewController.h"
 #import "UIImageView+AFNetworking.h"
+#import "YelpBusiness.h"
 
-@interface MainViewController () <UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate>
+@interface MainViewController () <UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate, FiltersViewControllerDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *searchResultsTableView;
 @property (strong, nonatomic) NSArray *businesses;
 @property (strong, nonatomic) UISearchBar *searchBar;
 
+- (void)fetchBusinessesWithQuery:(NSString *)query params:(NSDictionary *)params;
 @end
 
 @implementation MainViewController
@@ -26,6 +27,7 @@
     [self setUpTable];
     [self setUpSearchBar];
     [self setUpNavigationItem];
+    [self fetchBusinessesWithQuery:@"" params:nil];
 }
 
 - (void)setUpTable {
@@ -44,22 +46,18 @@
 
 - (void)setUpNavigationItem {
     self.navigationItem.titleView = self.searchBar;
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Filters" style:UIBarButtonItemStylePlain target:self action:@selector(openFilters)];
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Filter" style:UIBarButtonItemStylePlain target:self action:@selector(onFilterButton)];
 }
 
-- (void)openFilters {
-
+- (void)onFilterButton {
+    FiltersViewController *fvc = [[FiltersViewController alloc] init];
+    fvc.delegate = self;
+    UINavigationController *nvc = [[UINavigationController alloc] initWithRootViewController:fvc];
+    [self presentViewController:nvc animated:YES completion:nil];
 }
 
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
-    [YelpBusiness searchWithTerm:searchBar.text
-                        sortMode:YelpSortModeBestMatched
-                      categories:nil
-                           deals:NO
-                      completion:^(NSArray *businesses, NSError *error) {
-                          self.businesses = businesses;
-                          [self.searchResultsTableView reloadData];
-                      }];
+    [self fetchBusinessesWithQuery:searchBar.text params:nil];
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -75,5 +73,20 @@
     [cell.ratingImageView setImageWithURL:business.ratingImageUrl];
     cell.reviewCountLabel.text = [NSString stringWithFormat:@"%@ reviews", business.reviewCount];
     return cell;
+}
+
+- (void)filtersViewController:(FiltersViewController *)filtersViewController didChangeFilters:(NSDictionary *)filters {
+    [self fetchBusinessesWithQuery:self.searchBar.text params:filters];
+}
+
+- (void)fetchBusinessesWithQuery:(NSString *)query params:(NSDictionary *)params {
+    [YelpBusiness searchWithTerm:self.searchBar.text
+                        sortMode:YelpSortModeBestMatched
+                      categories:params[@"categories"]
+                           deals:NO
+                      completion:^(NSArray *businesses, NSError *error) {
+                          self.businesses = businesses;
+                          [self.searchResultsTableView reloadData];
+                      }];
 }
 @end

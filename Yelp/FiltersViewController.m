@@ -17,8 +17,9 @@
 @property (nonatomic, strong) NSArray *sections;
 @property (nonatomic, strong) NSArray *categories;
 @property BOOL offeringDeal;
-@property YelpSortMode sortMode;
+@property (nonatomic, strong) NSNumber *sortMode;
 @property (nonatomic, strong) NSMutableSet *selectedCategories;
+@property (nonatomic, strong) NSArray *sortModes;
 @end
 
 @implementation FiltersViewController
@@ -30,6 +31,7 @@
         self.selectedCategories = [NSMutableSet set];
         [self initSections];
         [self initCategories];
+        self.sortModes = @[@(YelpSortModeBestMatched), @(YelpSortModeDistance), @(YelpSortModeHighestRated)];
     }
 
     return self;
@@ -44,6 +46,128 @@
 
 - (void)initSections {
     self.sections = @[@"Offering a deal", @"Sort mode", @"Categories"];
+}
+
+- (void)setUpNavigationBar {
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(onCancelButton)];
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Apply" style:UIBarButtonItemStylePlain target:self action:@selector(onApplyButton)];
+}
+
+- (void)setUpTable {
+    self.tableView.dataSource = self;
+    self.tableView.delegate = self;
+    [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"CategoryCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"OfferingDealCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"SegmentedControlCell" bundle:nil] forCellReuseIdentifier:@"SortModeCell"];
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return self.sections.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    switch (indexPath.section) {
+        case 0:
+            return [self getOfferingDealCell];
+        case 1:
+            return [self getSortModeCell];
+        case 2:
+            return [self categoryCellForRow:indexPath.row];
+        default:
+            return nil;
+    }
+}
+
+- (SwitchCell *)getOfferingDealCell {
+    SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"OfferingDealCell"];
+    cell.on = self.offeringDeal;
+    cell.titleLabel.text = @"Offering a deal";
+    cell.delegate = self;
+    return cell;
+}
+
+
+- (SegmentedControlCell *)getSortModeCell {
+    SegmentedControlCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"SortModeCell"];
+    [cell.segmentedControl removeAllSegments];
+    [cell.segmentedControl insertSegmentWithTitle:@"Best match" atIndex:0 animated:NO];
+    [cell.segmentedControl insertSegmentWithTitle:@"Distance" atIndex:1 animated:NO];
+    [cell.segmentedControl insertSegmentWithTitle:@"Rating" atIndex:2 animated:NO];
+    cell.delegate = self;
+    return cell;
+}
+
+- (void)segmentedControlCell:(SegmentedControlCell *)cell didUpdateValue:(NSInteger)value {
+    if ([cell.reuseIdentifier isEqualToString:@"SortModeCell"]) {
+        self.sortMode = self.sortModes[value];
+    }
+}
+
+- (SwitchCell *)categoryCellForRow:(NSInteger)row {
+    SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"CategoryCell"];
+    cell.on = [self.selectedCategories containsObject:self.categories[row]];
+    cell.titleLabel.text = self.categories[row][@"name"];
+    cell.delegate = self;
+    return cell;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    switch (section) {
+        case 0:
+        case 1:
+            return 1;
+        case 2:
+            return self.categories.count;
+        default:
+            return 1;
+    }
+}
+
+- (void)switchCell:(SwitchCell *)cell didUpdateValue:(BOOL)value {
+    if ([cell.reuseIdentifier isEqualToString:@"OfferingDealCell"]) {
+        self.offeringDeal = value;
+    } else {
+        NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
+        if (value) {
+            [self.selectedCategories addObject:self.categories[indexPath.row]];
+        } else {
+            [self.selectedCategories removeObject:self.categories[indexPath.row]];
+        }
+    }
+}
+
+- (void)onCancelButton {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (void)onApplyButton {
+    [self.delegate filtersViewController:self didChangeFilters:self.filters];
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+- (NSDictionary *)filters {
+    NSMutableDictionary *filters = [NSMutableDictionary dictionary];
+    if (self.selectedCategories.count > 0) {
+        NSMutableArray *categoryNames = [NSMutableArray array];
+        for (NSDictionary *category in self.selectedCategories) {
+            [categoryNames addObject:category[@"code"]];
+        }
+        [filters setObject:categoryNames forKey:@"categories"];
+    }
+
+    if (self.offeringDeal) {
+        [filters setObject:@1 forKey:@"offeringDeal"];
+    }
+    if (self.sortMode) {
+        [filters setValue:self.sortMode forKey:@"sortMode"];
+    } else {
+        [filters setValue:YelpSortModeBestMatched forKey:@"sortMode"];
+    }
+    return filters;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    return self.sections[section];
 }
 
 - (void)initCategories {
@@ -216,127 +340,5 @@
                         @{@"name": @"Wok", @"code": @"wok"},
                         @{@"name": @"Wraps", @"code": @"wraps"},
                         @{@"name": @"Yugoslav", @"code": @"yugoslav"}];
-}
-
-- (void)setUpNavigationBar {
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(onCancelButton)];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Apply" style:UIBarButtonItemStylePlain target:self action:@selector(onApplyButton)];
-}
-
-- (void)setUpTable {
-    self.tableView.dataSource = self;
-    self.tableView.delegate = self;
-    [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"CategoryCell"];
-    [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"OfferingDealCell"];
-    [self.tableView registerNib:[UINib nibWithNibName:@"SegmentedControlCell" bundle:nil] forCellReuseIdentifier:@"SortModeCell"];
-}
-
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return self.sections.count;
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    switch (indexPath.section) {
-        case 0:
-            return [self getOfferingDealCell];
-        case 1:
-            return [self getSortModeCell];
-        case 2:
-            return [self categoryCellForRow:indexPath.row];
-        default:
-            return nil;
-    }
-}
-
-- (SwitchCell *)getOfferingDealCell {
-    SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"OfferingDealCell"];
-    cell.on = self.offeringDeal;
-    cell.titleLabel.text = @"Offering a deal";
-    cell.delegate = self;
-    return cell;
-}
-
-
-- (SegmentedControlCell *)getSortModeCell {
-    SegmentedControlCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"SortModeCell"];
-    [cell.segmentedControl removeAllSegments];
-    [cell.segmentedControl insertSegmentWithTitle:@"Best match" atIndex:0 animated:NO];
-    [cell.segmentedControl insertSegmentWithTitle:@"Distance" atIndex:0 animated:NO];
-    [cell.segmentedControl insertSegmentWithTitle:@"Rating" atIndex:0 animated:NO];
-    cell.delegate = self;
-    return cell;
-}
-
-- (void)segmentedControlCell:(SegmentedControlCell *)cell didUpdateValue:(NSInteger)value {
-    if ([cell.reuseIdentifier isEqualToString:@"SortModeCell"]) {
-        self.sortMode = value;
-    }
-}
-
-- (SwitchCell *)categoryCellForRow:(NSInteger)row {
-    SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"CategoryCell"];
-    cell.on = [self.selectedCategories containsObject:self.categories[row]];
-    cell.titleLabel.text = self.categories[row][@"name"];
-    cell.delegate = self;
-    return cell;
-}
-
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    switch (section) {
-        case 0:
-        case 1:
-            return 1;
-        case 2:
-            return self.categories.count;
-        default:
-            return 1;
-    }
-}
-
-- (void)switchCell:(SwitchCell *)cell didUpdateValue:(BOOL)value {
-    if ([cell.reuseIdentifier isEqualToString:@"OfferingDealCell"]) {
-        self.offeringDeal = value;
-    } else {
-        NSIndexPath *indexPath = [self.tableView indexPathForCell:cell];
-        if (value) {
-            [self.selectedCategories addObject:self.categories[indexPath.row]];
-        } else {
-            [self.selectedCategories removeObject:self.categories[indexPath.row]];
-        }
-    }
-}
-
-- (void)onCancelButton {
-    [self dismissViewControllerAnimated:YES completion:nil];
-}
-
-- (void)onApplyButton {
-    [self.delegate filtersViewController:self didChangeFilters:self.filters];
-    [self dismissViewControllerAnimated:YES completion:nil];
-}
-
-- (NSDictionary *)filters {
-    NSMutableDictionary *filters = [NSMutableDictionary dictionary];
-    if (self.selectedCategories.count > 0) {
-        NSMutableArray *categoryNames = [NSMutableArray array];
-        for (NSDictionary *category in self.selectedCategories) {
-            [categoryNames addObject:category[@"code"]];
-        }
-        [filters setObject:categoryNames forKey:@"categories"];
-    }
-
-    if (self.offeringDeal) {
-        [filters setObject:@1 forKey:@"offeringDeal"];
-    }
-    if (self.sortMode) {
-        [filters setValue:self.sortMode forKey:@"sortMode"];
-    } else {
-        [filters setValue:YelpSortModeBestMatched forKey:@"sortMode"];
-    }
-    return filters;
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return self.sections[section];
 }
 @end

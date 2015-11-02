@@ -80,8 +80,9 @@
 }
 
 - (void)fetchBusinessesWithQuery:(NSString *)query params:(NSDictionary *)params {
+    NSNumber *sortMode = params[@"sortMode"];
     [YelpBusiness searchWithTerm:self.searchBar.text
-                        sortMode:YelpSortModeBestMatched
+                        sortMode:[sortMode integerValue]
                       categories:params[@"categories"]
                            deals:(params[@"offeringDeal"] ? YES : NO)
                       completion:^(NSArray *businesses, NSError *error) {

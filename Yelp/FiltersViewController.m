@@ -20,6 +20,8 @@
 @property (nonatomic, strong) NSNumber *sortMode;
 @property (nonatomic, strong) NSMutableSet *selectedCategories;
 @property (nonatomic, strong) NSArray *sortModes;
+@property (nonatomic, strong) NSArray *radii;
+@property (nonatomic, strong) NSNumber *radius;
 @end
 
 @implementation FiltersViewController
@@ -32,6 +34,7 @@
         [self initSections];
         [self initCategories];
         self.sortModes = @[@(YelpSortModeBestMatched), @(YelpSortModeDistance), @(YelpSortModeHighestRated)];
+        self.radii = @[@1000, @5000, @10000];
     }
 
     return self;
@@ -45,7 +48,7 @@
 }
 
 - (void)initSections {
-    self.sections = @[@"Offering a deal", @"Sort mode", @"Categories"];
+    self.sections = @[@"Offering a deal", @"Sort mode", @"Distance", @"Categories"];
 }
 
 - (void)setUpNavigationBar {
@@ -59,6 +62,7 @@
     [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"CategoryCell"];
     [self.tableView registerNib:[UINib nibWithNibName:@"SwitchCell" bundle:nil] forCellReuseIdentifier:@"OfferingDealCell"];
     [self.tableView registerNib:[UINib nibWithNibName:@"SegmentedControlCell" bundle:nil] forCellReuseIdentifier:@"SortModeCell"];
+    [self.tableView registerNib:[UINib nibWithNibName:@"SegmentedControlCell" bundle:nil] forCellReuseIdentifier:@"DistanceCell"];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -72,6 +76,8 @@
         case 1:
             return [self getSortModeCell];
         case 2:
+            return [self getDistanceCell];
+        case 3:
             return [self categoryCellForRow:indexPath.row];
         default:
             return nil;
@@ -86,7 +92,6 @@
     return cell;
 }
 
-
 - (SegmentedControlCell *)getSortModeCell {
     SegmentedControlCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"SortModeCell"];
     [cell.segmentedControl removeAllSegments];
@@ -97,9 +102,21 @@
     return cell;
 }
 
+- (SegmentedControlCell *)getDistanceCell {
+    SegmentedControlCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"DistanceCell"];
+    [cell.segmentedControl removeAllSegments];
+    [cell.segmentedControl insertSegmentWithTitle:@"1km" atIndex:0 animated:NO];
+    [cell.segmentedControl insertSegmentWithTitle:@"5km" atIndex:1 animated:NO];
+    [cell.segmentedControl insertSegmentWithTitle:@"10km" atIndex:2 animated:NO];
+    cell.delegate = self;
+    return cell;
+}
+
 - (void)segmentedControlCell:(SegmentedControlCell *)cell didUpdateValue:(NSInteger)value {
     if ([cell.reuseIdentifier isEqualToString:@"SortModeCell"]) {
         self.sortMode = self.sortModes[value];
+    } else if ([cell.reuseIdentifier isEqualToString:@"DistanceCell"]) {
+        self.radius = self.radii[value];
     }
 }
 
@@ -115,8 +132,9 @@
     switch (section) {
         case 0:
         case 1:
-            return 1;
         case 2:
+            return 1;
+        case 3:
             return self.categories.count;
         default:
             return 1;
@@ -162,6 +180,10 @@
         [filters setValue:self.sortMode forKey:@"sortMode"];
     } else {
         [filters setValue:YelpSortModeBestMatched forKey:@"sortMode"];
+    }
+    
+    if (self.radius) {
+        [filters setValue:self.radius forKey:@"radius"];
     }
     return filters;
 }

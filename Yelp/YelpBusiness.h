@@ -30,6 +30,7 @@
               sortMode:(YelpSortMode)sortMode
             categories:(NSArray *)categories
                  deals:(BOOL)hasDeal
+                radius:(NSNumber *)radius
             completion:(void (^)(NSArray *businesses, NSError *error))completion;
 
 @end

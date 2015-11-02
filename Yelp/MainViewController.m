@@ -85,6 +85,7 @@
                         sortMode:[sortMode integerValue]
                       categories:params[@"categories"]
                            deals:(params[@"offeringDeal"] ? YES : NO)
+                          radius:params[@"radius"]
                       completion:^(NSArray *businesses, NSError *error) {
                           self.businesses = businesses;
                           [self.searchResultsTableView reloadData];

@@ -69,6 +69,7 @@
                     <constraint firstItem="saW-fX-bBB" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="YMf-fv-vA6" secondAttribute="trailing" constant="8" id="sK3-dx-ooU"/>
                     <constraint firstItem="kup-iZ-WO0" firstAttribute="leading" secondItem="2dH-oy-O7O" secondAttribute="trailing" constant="8" id="shr-kJ-J5p"/>
                     <constraint firstItem="Tey-B1-zqr" firstAttribute="leading" secondItem="kup-iZ-WO0" secondAttribute="trailing" constant="8" id="xiv-Fp-zso"/>
+                    <constraint firstAttribute="bottomMargin" relation="greaterThanOrEqual" secondItem="kup-iZ-WO0" secondAttribute="bottom" id="zm0-7z-nBG"/>
                 </constraints>
             </tableViewCellContentView>
             <animations/>

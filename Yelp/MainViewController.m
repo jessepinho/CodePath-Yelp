@@ -71,6 +71,7 @@
     [cell.nameLabel sizeToFit];
     [cell.businessImageView setImageWithURL:business.imageUrl];
     [cell.ratingImageView setImageWithURL:business.ratingImageUrl];
+    cell.distanceLabel.text = business.distance;
     cell.reviewCountLabel.text = [NSString stringWithFormat:@"%@ reviews", business.reviewCount];
     return cell;
 }

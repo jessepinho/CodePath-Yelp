@@ -229,9 +229,21 @@
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    switch (indexPath.section) {
+        case 0:
+            return [self categoryCellForRow:indexPath.row];
+            break;
+
+        default:
+            break;
+    }
+    return nil;
+}
+
+- (SwitchCell *)categoryCellForRow:(NSInteger)row {
     SwitchCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"SwitchCell"];
-    cell.on = [self.selectedCategories containsObject:self.categories[indexPath.row]];
-    cell.titleLabel.text = self.categories[indexPath.row][@"name"];
+    cell.on = [self.selectedCategories containsObject:self.categories[row]];
+    cell.titleLabel.text = self.categories[row][@"name"];
     cell.delegate = self;
     return cell;
 }
